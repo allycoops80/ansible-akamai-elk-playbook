@@ -1,0 +1,19 @@
+---
+#
+# Playbook to install the ELK stack + Beats
+#
+- hosts: elkservers
+  gather_facts: False
+  pre_tasks:
+  - name: Install python for Ansible
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+  remote_user: ubuntu
+  become: yes
+  become_user: root
+  roles:
+  - { role: python }
+  - { role: java }
+  - { role: elasticsearch }
+  - { role: kibana }
+  - { role: metricbeat }
+  - { role: logstash }
