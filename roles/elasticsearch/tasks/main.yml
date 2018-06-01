@@ -40,6 +40,14 @@
    regexp: 'http.port:'
    line: 'http.port: 9200'
  
+# Update Elasticsearch data directory 
+
+- name: Updating the data path in config file 
+  lineinfile:
+   destfile: /etc/elasticsearch/elasticsearch.yml
+   regexp: '#path.data: /path/to/data'
+   line: 'path.data: /mnt/els'
+
 # Start Elasticsearch
 - name: Starting Elasticsearch
   service:

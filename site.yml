@@ -11,7 +11,7 @@
   become: yes
   become_user: root
   roles:
-  - { role: python }
+  - { role: prep }
   - { role: java }
   - { role: elasticsearch }
   - { role: kibana }

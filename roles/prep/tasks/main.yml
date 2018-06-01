@@ -1,0 +1,58 @@
+---
+#
+# Installing Python 2
+# Required for Ansible
+#
+
+
+- name: install python 2
+  raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
+- name: install aws-cli
+  apt: 
+    name: awscli
+    state: latest
+    update_cache: yes
+
+# Prepare storage volumes
+
+- name: Creates directory
+  file: path=/mnt/logs state=directory
+
+- name: Creates directory
+  file: path=/mnt/els state=directory
+
+- filesystem:
+    fstype: ext4
+    dev: /dev/nvme1n1
+
+- filesystem:
+    fstype: ext4
+    dev: /dev/nvme2n1
+
+- name: Mount Logs volume
+  mount:
+    name: /mnt/logs
+    src: /dev/nvme2n1
+    fstype: ext4
+    opts: rw
+    state: mounted
+
+- name: Mount ELS volume
+  mount: 
+    name: /mnt/els
+    src: /dev/nvme1n1
+    fstype: ext4
+    opts: rw
+    state: mounted
+
+
+- file:
+    path: /mnt/els
+    mode: 0777
+
+- file:
+    path: /mnt/logs
+    mode: 0777
+  
+

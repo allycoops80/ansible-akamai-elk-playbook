@@ -1,0 +1,148 @@
+Mappings: 
+  UbuntuAMI: 
+    eu-west-1: 
+      ImageId: ami-58d7e821
+  prod:
+    eu-west-1:
+      PrivateSubnetID: subnet-e5d24280
+      VpcId: vpc-e7c06582
+  sandbox:
+    eu-west-1: 
+      PrivateSubnetID: subnet-e480b8ad
+      VpcId: vpc-ea828f8d
+
+Parameters: 
+  AWSAccount: 
+    AllowedValues: 
+      - sandbox
+      - prod
+    Default: sandbox
+    Description: "Which AWS Account?"
+    Type: String
+  ContactEmail: 
+    Default: alan.cooper@skyscanner.net
+    Description: "Contact Email"
+    Type: String
+  ProjectTag: 
+    Default: service-routing
+    Description: "ProjectTag"
+    Type: String
+  EC2InstanceType: 
+    AllowedValues: 
+      - t2.nano
+      - t2.micro
+      - t2.medium
+      - c4.large
+      - c5.4xlarge
+    ConstraintDescription: "Must be a valid EC2 Instance Type"
+    Default: t2.nano
+    Description: "Instance Type"
+    Type: String
+  EC2RootKey: 
+    Default: CLDOPS-Sandbox
+    Description: "Key for SSH access"
+    Type: "AWS::EC2::KeyPair::KeyName"
+Resources:
+  EC2Instance:
+      DependsOn: InstanceSecurityGroup
+      Type: AWS::EC2::Instance
+      Properties:
+        IamInstanceProfile: !Ref IAMProfile
+        ImageId: 
+          ? "Fn::FindInMap"
+          : 
+            - UbuntuAMI
+            - 
+              Ref: "AWS::Region"
+            - ImageId
+        KeyName: !Ref EC2RootKey
+        InstanceType: !Ref EC2InstanceType
+        SubnetId: 
+          ? "Fn::FindInMap"
+          : 
+            - 
+              Ref: AWSAccount
+            - 
+              Ref: "AWS::Region"
+            - PrivateSubnetID
+        SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+        BlockDeviceMappings: 
+          - DeviceName: "/dev/sdm"
+            Ebs: 
+              VolumeType: "standard"
+              DeleteOnTermination: "true"
+              VolumeSize: "200"
+          - DeviceName: "/dev/sdn"
+            Ebs: 
+              VolumeType: "io1"
+              Iops: "10000"
+              DeleteOnTermination: "true"
+              VolumeSize: "400"
+        Tags: 
+        - 
+          Key: Project
+          Value: 
+            Ref: ProjectTag
+        - 
+          Key: Contact
+          Value: 
+            Ref: ContactEmail
+  IAMProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref IAMRole
+ 
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:Get*
+            - s3:List*
+            Effect: Allow
+            Resource:
+            - 'arn:aws:s3:::akamai-lds-ftp-ldslogss3bucket-ydfvjkr96ig'
+            - 'arn:aws:s3:::akamai-lds-ftp-ldslogss3bucket-ydfvjkr96ig/*'
+          Version: '2012-10-17'
+        PolicyName: ec2-instance-policy
+
+
+   
+  InstanceSecurityGroup: 
+      Type: AWS::EC2::SecurityGroup
+      Properties: 
+        GroupDescription: "Security Group for EC2Instances"
+        VpcId : 
+          ? "Fn::FindInMap"
+          : 
+            - 
+              Ref: AWSAccount
+            - 
+              Ref: "AWS::Region"
+            - VpcId
+        SecurityGroupIngress: 
+          - 
+            CidrIp: 10.0.0.0/8
+            FromPort: 22
+            IpProtocol: TCP
+            ToPort: 22
+          - 
+            CidrIp: 10.0.0.0/8
+            FromPort: 5601
+            IpProtocol: TCP
+            ToPort: 5601            
