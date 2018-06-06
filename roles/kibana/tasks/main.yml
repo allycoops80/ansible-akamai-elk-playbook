@@ -28,7 +28,7 @@
   lineinfile:
    destfile: /etc/kibana/kibana.yml
    regexp: 'elasticsearch.url:'
-   line: 'elasticsearch.url: "http://localhost:9200"'
+   line: 'elasticsearch.url: "https://search-service-routing-akamaielk-2rrak4oxmqqv77bd6p3uv2js4a.eu-west-1.es.amazonaws.com:443"'
    
 # Starting Kibana
 

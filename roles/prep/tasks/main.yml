@@ -24,16 +24,16 @@
 
 - filesystem:
     fstype: ext4
-    dev: /dev/nvme1n1
+    dev: /dev/xvdm
 
 - filesystem:
     fstype: ext4
-    dev: /dev/nvme2n1
+    dev: /dev/xvdn
 
 - name: Mount Logs volume
   mount:
     name: /mnt/logs
-    src: /dev/nvme2n1
+    src: /dev/xvdm
     fstype: ext4
     opts: rw
     state: mounted
@@ -41,7 +41,7 @@
 - name: Mount ELS volume
   mount: 
     name: /mnt/els
-    src: /dev/nvme1n1
+    src: /dev/xvdn
     fstype: ext4
     opts: rw
     state: mounted

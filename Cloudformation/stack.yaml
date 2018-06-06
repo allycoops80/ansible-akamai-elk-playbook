@@ -16,7 +16,7 @@ Parameters:
     AllowedValues: 
       - sandbox
       - prod
-    Default: sandbox
+    Default: prod
     Description: "Which AWS Account?"
     Type: String
   ContactEmail: 
@@ -32,14 +32,13 @@ Parameters:
       - t2.nano
       - t2.micro
       - t2.medium
-      - c4.large
-      - c5.4xlarge
+      - c4.2xlarge
     ConstraintDescription: "Must be a valid EC2 Instance Type"
     Default: t2.nano
     Description: "Instance Type"
     Type: String
   EC2RootKey: 
-    Default: CLDOPS-Sandbox
+    Default: prod-aws-srad-akamai-elk
     Description: "Key for SSH access"
     Type: "AWS::EC2::KeyPair::KeyName"
 Resources:
@@ -70,15 +69,15 @@ Resources:
         BlockDeviceMappings: 
           - DeviceName: "/dev/sdm"
             Ebs: 
-              VolumeType: "standard"
               DeleteOnTermination: "true"
-              VolumeSize: "200"
+              VolumeSize: 200
+              VolumeType: io1
+              Iops: "6000"
           - DeviceName: "/dev/sdn"
             Ebs: 
-              VolumeType: "io1"
-              Iops: "10000"
+              VolumeType: "standard"
               DeleteOnTermination: "true"
-              VolumeSize: "400"
+              VolumeSize: "20"
         Tags: 
         - 
           Key: Project
@@ -145,4 +144,67 @@ Resources:
             CidrIp: 10.0.0.0/8
             FromPort: 5601
             IpProtocol: TCP
-            ToPort: 5601            
+            ToPort: 5601 
+            
+  ElasticSearch:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      DomainName: service-routing-akamaielk
+      ElasticsearchVersion: 6.2
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: es:*
+            Resource: "*"
+            Condition:
+              IpAddress:
+                aws:SourceIp:
+                - 188.39.95.88/29
+                - 188.39.95.136/29
+                - 213.174.214.32/27
+                - 63.137.86.160/28
+                - 170.55.21.120/30
+                - 42.61.26.62/32
+                - 206.100.1.64/27
+                - 118.201.65.64/29
+                - 203.81.28.152/29
+                - 152.101.128.147/32
+                - 213.174.217.96/27
+                - 210.5.2.80/28
+                - 203.85.34.160/29
+                - 37.191.53.105/32
+                - 213.174.214.100/27
+                - 91.126.39.170/32
+                - 62.249.252.196/32
+                - 78.33.9.228/32
+                - 118.238.210.112/32
+                - 122.219.110.128/29
+                - 39.110.240.0/29
+                - 10.0.0.0/8
+                - 54.246.246.80/28
+                - 54.93.255.0/28
+                - 54.250.255.192/28
+                - 54.255.251.80/28
+                - 52.213.191.240/28
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 200
+        VolumeType: io1
+        Iops: "6000"
+      ElasticsearchClusterConfig:
+        InstanceCount: 3
+        InstanceType: c4.2xlarge.elasticsearch
+        ZoneAwarenessEnabled: false
+      AdvancedOptions:
+        rest.action.multi.allow_explicit_index: true
+      Tags:
+      - Key: Contact
+        Value:
+          Ref: ContactEmail
+      - Key: Project
+        Value:
+          Ref: ProjectTag
